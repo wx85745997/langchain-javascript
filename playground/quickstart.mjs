@@ -16,4 +16,53 @@ import { exec } from "child_process";
 
 // to run, go to terminal and enter: cd playground
 // then enter: node quickstart.mjs
-console.log("Welcome to the LangChain Quickstart Module!");
+const template =
+  "Please give me some ideas for content I should write about regarding {topic}? The content is for {socialplatform}. Translate to {language}.";
+const prompt = new PromptTemplate({
+  template: template,
+  inputVariables: ["topic", "socialplatform", "language"],
+});
+
+const formattedPromptTemplate = await prompt.format({
+  topic: "artifical intelligience",
+  socialplatform: "twitter",
+  language: "spanish",
+});
+
+console.log({ formattedPromptTemplate });
+const model = new OpenAI({ temperature: 0.9 });
+
+const chain = new LLMChain({ prompt: prompt, llm: model });
+
+const resChain = await chain.call({
+  topic: "artifical intelligience",
+  socialplatform: "twitter",
+  language: "engilsh",
+});
+
+console.log({ resChain });
+
+const agentModel = new OpenAI({
+  temperature: 0,
+  modelName: "gpt-3.5-turbo",
+});
+
+const tools = [
+  new SerpAPI(process.env.SERPAPI_API_KEY, {
+    location: "",
+    hl: "en",
+    gl: "us",
+  }),
+  new Calculator(),
+];
+
+const executor = await initializeAgentExecutorWithOptions(tools, agentModel, {
+  agentType: "zero-shot-react-description",
+  verbose: true,
+  maxIterations: 5,
+});
+
+const input = "what is langchain?";
+
+const result = await executor.call({ input });
+console.log({ result });
